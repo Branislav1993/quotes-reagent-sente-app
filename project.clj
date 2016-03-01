@@ -1,10 +1,11 @@
-(defproject quotesapp "0.1.0-SNAPSHOT"
+(defproject myapp "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/core.async    "0.2.374"]
                  [ring-server "0.4.0"]
                  [reagent "0.5.1" :exclusions [org.clojure/tools.reader]]
                  [reagent-forms "0.5.16"]
@@ -16,25 +17,28 @@
                  [environ "1.0.2"]
                  [org.clojure/clojurescript "1.7.228" :scope "provided"]
                  [secretary "1.2.3"]
-                 [http-kit "2.1.18"]
-                 [com.taoensso/sente "1.8.0"]
-                 [com.taoensso/encore "2.36.2"]
-                 [com.taoensso/timbre "4.3.0"]
-                 [venantius/accountant "0.1.6" :exclusions [org.clojure/tools.reader]]]
+                 [venantius/accountant "0.1.6" :exclusions [org.clojure/tools.reader]]
+                 [com.taoensso/sente        "1.8.0"] ; <--- Sente
+                 [com.taoensso/timbre       "4.3.0"]
+                 [http-kit          "2.1.21-alpha2"]
+
+
+
+                 ]
 
   :plugins [[lein-environ "1.0.2"]
             [lein-cljsbuild "1.1.1"]
             [lein-asset-minifier "0.2.7"
              :exclusions [org.clojure/clojure]]]
 
-  :ring {:handler quotesapp.handler/app
-         :uberwar-name "quotesapp.war"}
+  :ring {:handler myapp.handler/app
+         :uberwar-name "myapp.war"}
 
   :min-lein-version "2.5.0"
 
-  :uberjar-name "quotesapp.jar"
+  :uberjar-name "myapp.jar"
 
-  :main quotesapp.server
+  :main myapp.server
 
   :clean-targets ^{:protect false} [:target-path
                                     [:cljsbuild :builds :app :compiler :output-dir]
@@ -47,7 +51,7 @@
   {:assets
    {"resources/public/css/site.min.css" "resources/public/css/site.css"}}
 
-  :cljsbuild {:builds {:app {:source-paths ["src/cljs" "src/cljc"]
+   :cljsbuild {:builds {:app {:source-paths ["src/cljs" "src/cljc"]
                              :compiler {:output-to "target/cljsbuild/public/js/app.js"
                                         :output-dir "target/cljsbuild/public/js/out"
                                         :asset-path   "js/out"
@@ -55,7 +59,7 @@
                                         :pretty-print  true}}}}
 
 
-  :profiles {:dev {:repl-options {:init-ns quotesapp.repl}
+  :profiles {:dev {:repl-options {:init-ns myapp.repl}
 
                    :dependencies [[ring/ring-mock "0.3.0"]
                                   [ring/ring-devel "1.4.0"]
@@ -97,12 +101,12 @@
                               :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"
                                                  ]
                               :css-dirs ["resources/public/css"]
-                              :ring-handler quotesapp.handler/app}
+                              :ring-handler myapp.handler/app}
 
                    :env {:dev true}
 
                    :cljsbuild {:builds {:app {:source-paths ["env/dev/cljs"]
-                                              :compiler {:main "quotesapp.dev"
+                                              :compiler {:main "myapp.dev"
                                                          :source-map true}}
 
 

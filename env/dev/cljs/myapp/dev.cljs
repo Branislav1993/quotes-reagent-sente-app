@@ -1,5 +1,5 @@
-(ns ^:figwheel-no-load quotesapp.dev
-  (:require [quotesapp.core :as core]
+(ns ^:figwheel-no-load myapp.dev
+  (:require [myapp.core :as core]
             [figwheel.client :as figwheel :include-macros true]))
 
 (enable-console-print!)

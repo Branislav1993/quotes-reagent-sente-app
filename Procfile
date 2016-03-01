@@ -1,1 +1,1 @@
-web: java $JVM_OPTS -cp target/quotesapp.jar clojure.main -m quotesapp.server
+web: java $JVM_OPTS -cp target/myapp.jar clojure.main -m myapp.server

@@ -1,5 +1,5 @@
-(ns quotesapp.repl
-  (:use quotesapp.handler
+(ns myapp.repl
+  (:use myapp.handler
         ring.server.standalone
         [ring.middleware file-info file]))
 

@@ -1,18 +1,36 @@
-(ns quotesapp.core
-      (:require
-          [clojure.string  :as str]
-          [reagent.core    :as reagent   :refer [atom]]
-          [reagent.session :as session]
-          [secretary.core  :as secretary :include-macros true]
-          [accountant.core :as accountant]
-          [cljs.core.async :as async  :refer (<! >! put! chan)]
-          [taoensso.sente  :as sente     :refer (cb-success?)]
-          [taoensso.encore :as log])
-)
+(ns myapp.core
+    (:require [reagent.core :as reagent :refer [atom]]
+              [reagent.session :as session]
+              [secretary.core :as secretary :include-macros true]
+              [accountant.core :as accountant]
+              [clojure.string  :as str]
+              [cljs.core.async :as async  :refer (<! >! put! chan)]
+              [taoensso.encore :as encore :refer ()]
+              [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
+              [taoensso.sente  :as sente  :refer (cb-success?)])
+   (:require-macros
+              [cljs.core.async.macros :as asyncm :refer (go go-loop)]))
 
+;;SENTE section
 
-(let [{:keys [chsk ch-recv send-fn state]}
-      (sente/make-channel-socket! "/chsk" {:type :auto})]
+;;-------------------------
+
+;;;; Define our Sente channel socket (chsk) client
+
+(let [;; For this example, select a random protocol:
+      rand-chsk-type (if (>= (rand) 0.5) :ajax :auto)
+      _ (.log js/console "Randomly selected chsk type: %s" (str rand-chsk-type))
+
+      ;; Serializtion format, must use same val for client + server:
+      packer :edn ; Default packer, a good choice in most cases
+      ;; (sente-transit/get-flexi-packer :edn) ; Experimental, needs Transit dep
+
+      {:keys [chsk ch-recv send-fn state]}
+      (sente/make-channel-socket-client!
+        "/chsk" ; Must match server Ring routing URL
+        {:type   rand-chsk-type
+         :packer packer})]
+
   (def chsk       chsk)
   (def ch-chsk    ch-recv) ; ChannelSocket's receive channel
   (def chsk-send! send-fn) ; ChannelSocket's send API fn
@@ -34,24 +52,22 @@
 (defmethod -event-msg-handler
   :default ; Default/fallback case (no other matching handler)
   [{:as ev-msg :keys [event]}]
-  (.log js/console(pr-str "Unhandled event: %s" event)))
+  (.log js/console "Unhandled event: " (str event)))
 
 (defmethod -event-msg-handler :chsk/state
   [{:as ev-msg :keys [?data]}]
   (if (= ?data {:first-open? true})
-    (.log js/console (pr-str "Channel socket successfully established!"))
-    (.log js/console (pr-str "Channel socket state change: %s" ?data))))
+    (.log js/console "Channel socket successfully established!")
+    (.log js/console "Channel socket state change: " (str ?data))))
 
 (defmethod -event-msg-handler :chsk/recv
   [{:as ev-msg :keys [?data]}]
-  (.log js/console (pr-str "Push event from server: %s" ?data)))
+  (.log js/console "Push event from server: " (str ?data)))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
   (let [[?uid ?csrf-token ?handshake-data] ?data]
-    (.log js/console (pr-str "Handshake: %s" ?data))))
-
-;; TODO Add your (defmethod -event-msg-handler <event-id> [ev-msg] <body>)s here...
+    (.log js/console "Handshake: " (str ?data))))
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 
@@ -63,16 +79,17 @@
     (sente/start-client-chsk-router!
       ch-chsk event-msg-handler)))
 
+;;-------------------------
 
 ;; -------------------------
 ;; Views
 
 (defn home-page []
-  [:div [:h2 "Welcome to quotesapp"]
+  [:div [:h2 "Welcome to myapp"]
    [:div [:a {:href "/about"} "go to about page"]]])
 
 (defn about-page []
-  [:div [:h2 "About quotesapp"]
+  [:div [:h2 "About myapp"]
    [:div [:a {:href "/"} "go to the home page"]]])
 
 (defn current-page []
@@ -96,5 +113,5 @@
 (defn init! []
   (accountant/configure-navigation!)
   (accountant/dispatch-current!)
-  (mount-root)
-  (start-router!))
+  (start-router!)
+  (mount-root))

@@ -1,5 +1,5 @@
-(ns quotesapp.prod
-  (:require [quotesapp.core :as core]))
+(ns myapp.prod
+  (:require [myapp.core :as core]))
 
 ;;ignore println statements in prod
 (set! *print-fn* (fn [& _]))
