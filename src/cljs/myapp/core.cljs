@@ -62,7 +62,9 @@
 
 (defmethod -event-msg-handler :chsk/recv
   [{:as ev-msg :keys [?data]}]
-  (.log js/console "Push event from server: " (str ?data)))
+  (do
+  (.log js/console "Push event from server: " (str ?data))
+  (swap! value assoc :text (str ?data))))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
@@ -84,9 +86,12 @@
 ;; -------------------------
 ;; Views
 
+(defonce value (reagent/atom {:text "initial"}))
+
 (defn home-page []
   [:div [:h2 "Welcome to myapp"]
-   [:div [:a {:href "/about"} "go to about page"]]])
+   [:div [:a {:href "/about"} "go to about page"]]
+   [:div [:p "I have value: " (str @value)]]])
 
 (defn about-page []
   [:div [:h2 "About myapp"]
