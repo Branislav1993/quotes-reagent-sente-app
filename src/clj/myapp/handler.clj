@@ -73,6 +73,12 @@
 
 ;;;; Some server>user async push examples
 
+(def quotes '({:quote "Don't cry because it's over, smile because it happened." :author "Dr. Seuss"}
+              {:quote "Be yourself; everyone else is already taken." :author "Oscar Wilde"}
+              {:quote "Two things are infinite: the universe and human stupidity; and I'm not sure about the universe." :author "Albert Einstein"}))
+
+(defn rand-quote [] (rand-nth quotes))
+
 (defn start-example-broadcaster!
   "As an example of server>user async pushes, setup a loop to broadcast an
   event to all connected users every 10 seconds"
@@ -82,14 +88,10 @@
           (debugf "Broadcasting server>user: %s" @connected-uids)
           (doseq [uid (:any @connected-uids)]
             (chsk-send! uid
-              [:some/broadcast
-               {:what-is-this "An async broadcast pushed from server"
-                :how-often "Every 10 seconds"
-                :to-whom uid
-                :i i}])))]
+              [:some/broadcast (rand-quote)])))]
 
     (go-loop [i 0]
-      (<! (async/timeout 10000))
+      (<! (async/timeout 2000))
       (broadcast! i)
       (recur (inc i)))))
 
@@ -111,7 +113,7 @@
              :content "width=device-width, initial-scale=1"}]
      (include-css (if (env :dev) "css/site.css" "css/site.min.css"))
      (include-css "css/bootstrap.min.css")]
-    [:body
+    [:body.container
      mount-target
      (include-js "js/app.js")]))
 

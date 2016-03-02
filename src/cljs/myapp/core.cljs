@@ -64,7 +64,7 @@
   [{:as ev-msg :keys [?data]}]
   (do
   (.log js/console "Push event from server: " (str ?data))
-  (swap! value assoc :text (str ?data))))
+  (swap! value assoc :quote (get (nth ?data 1) :quote) :author (get (nth ?data 1) :author))))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
@@ -86,12 +86,13 @@
 ;; -------------------------
 ;; Views
 
-(defonce value (reagent/atom {:text "initial"}))
+(defonce value (reagent/atom {:quote "" :author ""}))
 
 (defn home-page []
-  [:div [:h2 "Welcome to myapp"]
-   [:div [:a {:href "/about"} "go to about page"]]
-   [:div [:p "I have value: " (str @value)]]])
+  [:div.row [:h2 "Welcome to myapp"]
+   [:div.row [:a {:href "/about"} "go to about page"]]
+   [:br]
+   [:div.row [:blockquote [:p (get @value :quote)] [:footer (get @value :author)]]]])
 
 (defn about-page []
   [:div [:h2 "About myapp"]
