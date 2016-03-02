@@ -94,8 +94,8 @@
   [:div.row.col-md-8.col-md-offset-2
    [:h2 "Welcome to myapp"]
    [:br]
-   [:div.row [:blockquote [:p (get @q1 :quote)] [:footer (get @q1 :author)]]]
-   [:div.row [:blockquote.blockquote-reverse [:p (get @q2 :quote)] [:footer (get @q2 :author)]]]
+   [:div.row [:blockquote [:p (:quote @q1)] [:footer (:author @q1)]]]
+   [:div.row [:blockquote.blockquote-reverse [:p (:quote @q2)] [:footer (:author @q2)]]]
    [:div.row [:a {:href "/about"} "go to about page"]]])
 
 (defn about-page []
