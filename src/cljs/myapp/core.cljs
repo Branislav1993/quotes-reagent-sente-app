@@ -64,7 +64,8 @@
   [{:as ev-msg :keys [?data]}]
   (do
   (.log js/console "Push event from server: " (str ?data))
-  (swap! value assoc :quote (get (nth ?data 1) :quote) :author (get (nth ?data 1) :author))))
+  (swap! q1 assoc :quote (:quote (:q1 (nth ?data 1))) :author (:author (:q1 (nth ?data 1))))
+  (swap! q2 assoc :quote (:quote (:q1 (nth ?data 1))) :author (:author (:q2 (nth ?data 1))))))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
@@ -86,13 +87,16 @@
 ;; -------------------------
 ;; Views
 
-(defonce value (reagent/atom {:quote "" :author ""}))
+(defonce q1 (reagent/atom {:quote "" :author ""}))
+(defonce q2 (reagent/atom {:quote "" :author ""}))
 
 (defn home-page []
-  [:div.row [:h2 "Welcome to myapp"]
-   [:div.row [:a {:href "/about"} "go to about page"]]
+  [:div.row.col-md-8.col-md-offset-2
+   [:h2 "Welcome to myapp"]
    [:br]
-   [:div.row [:blockquote [:p (get @value :quote)] [:footer (get @value :author)]]]])
+   [:div.row [:blockquote [:p (get @q1 :quote)] [:footer (get @q1 :author)]]]
+   [:div.row [:blockquote.blockquote-reverse [:p (get @q2 :quote)] [:footer (get @q2 :author)]]]
+   [:div.row [:a {:href "/about"} "go to about page"]]])
 
 (defn about-page []
   [:div [:h2 "About myapp"]

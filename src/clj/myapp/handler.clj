@@ -75,20 +75,18 @@
 
 (def quotes '({:quote "Don't cry because it's over, smile because it happened." :author "Dr. Seuss"}
               {:quote "Be yourself; everyone else is already taken." :author "Oscar Wilde"}
-              {:quote "Two things are infinite: the universe and human stupidity; and I'm not sure about the universe." :author "Albert Einstein"}))
+              {:quote "Two things are infinite: the universe and human stupidity; and I'm not sure about the universe." :author "Albert Einstein"}
+              {:quote "A warm smile is the universal language of kindness." :author "William Arthur Ward"}
+              {:quote "The real man smiles in trouble, gathers strength from distress, and grows brave by reflection." :author "Thomas Paine"}))
 
 (defn rand-quote [] (rand-nth quotes))
 
-(defn start-example-broadcaster!
-  "As an example of server>user async pushes, setup a loop to broadcast an
-  event to all connected users every 10 seconds"
-  []
+(defn start-example-broadcaster! []
   (let [broadcast!
         (fn [i]
           (debugf "Broadcasting server>user: %s" @connected-uids)
           (doseq [uid (:any @connected-uids)]
-            (chsk-send! uid
-              [:some/broadcast (rand-quote)])))]
+            (chsk-send! uid [:quotes/two {:q1 (rand-quote) :q2 (rand-quote)}])))]
 
     (go-loop [i 0]
       (<! (async/timeout 2000))
