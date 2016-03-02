@@ -1,6 +1,7 @@
 #How to start
 
-lein figwheel
-lein run
+`lein figwheel`
 
-Go to localhost:3000 and open the console
+`lein run`
+
+Go to `localhost:3000` and open the console
