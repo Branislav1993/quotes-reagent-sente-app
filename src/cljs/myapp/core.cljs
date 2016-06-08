@@ -11,13 +11,14 @@
   (:require-macros
     [cljs.core.async.macros :as asyncm :refer (go go-loop)]))
 
-(defonce quotes (reagent/atom {:quotes []}))
-
-(defn update-quotes! [f & args]
-  (apply swap! quotes update-in [:quotes] f args))
+(defonce quotes (reagent/atom {:quotes '()}))
 
 (defn add-quote! [q]
-  (update-quotes! conj q))
+  (if (< 4 (count (:quotes @quotes)))
+    (do 
+      (.log js/console "its five!")
+      (swap! quotes update-in [:quotes] drop-last)))
+  (swap! quotes update-in [:quotes] conj q))
 
 ;;SENTE section
 
@@ -90,7 +91,7 @@
    [:h2 "Activity stream"]
    [:div.row [:a {:href "/about"} "go to about page"]]
    [:br]
-   (for [q (rseq (:quotes @quotes))]
+   (for [q (:quotes @quotes)]
      ^{:key (rand-int 1000)} [:div.row [:blockquote [:p (:quote q)] [:footer (:author q)]]])
    ])
 
