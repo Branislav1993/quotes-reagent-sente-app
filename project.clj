@@ -80,7 +80,8 @@
                                   ]
 
                    :source-paths ["env/dev/clj"]
-                   :plugins [[lein-figwheel "0.5.0-6"
+                   :plugins [[lein2-eclipse "2.0.0"]
+                             [lein-figwheel "0.5.0-6"
                               :exclusions [org.clojure/core.memoize
                                            ring/ring-core
                                            org.clojure/clojure
@@ -91,7 +92,6 @@
                                            org.clojure/core.async
                                            org.clojure/tools.analyzer.jvm]]
                              ]
-
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
 

@@ -10,6 +10,14 @@
               [taoensso.sente  :as sente  :refer (cb-success?)])
    (:require-macros
               [cljs.core.async.macros :as asyncm :refer (go go-loop)]))
+                                    
+(defonce quotes (reagent/atom {:quotes []}))
+
+(defn update-quotes! [f & args]
+  (apply swap! quotes update-in [:quotes] f args))
+
+(defn add-quote! [q]
+   (update-quotes! conj q))
 
 ;;SENTE section
 
@@ -17,18 +25,14 @@
 
 ;;;; Define our Sente channel socket (chsk) client
 
-(let [;; For this example, select a random protocol:
-      rand-chsk-type (if (>= (rand) 0.5) :ajax :auto)
-      _ (.log js/console "Randomly selected chsk type: %s" (str rand-chsk-type))
-
-      ;; Serializtion format, must use same val for client + server:
+(let [      ;; Serializtion format, must use same val for client + server:
       packer :edn ; Default packer, a good choice in most cases
       ;; (sente-transit/get-flexi-packer :edn) ; Experimental, needs Transit dep
 
       {:keys [chsk ch-recv send-fn state]}
       (sente/make-channel-socket-client!
         "/chsk" ; Must match server Ring routing URL
-        {:type   rand-chsk-type
+        {:type  :auto
          :packer packer})]
 
   (def chsk       chsk)
@@ -38,7 +42,6 @@
   )
 
 ;;;; Sente event handlers
-
 (defmulti -event-msg-handler
   "Multimethod to handle Sente `event-msg`s"
   :id ; Dispatch on event-id
@@ -62,15 +65,19 @@
 
 (defmethod -event-msg-handler :chsk/recv
   [{:as ev-msg :keys [?data]}]
-  (do
-  (.log js/console "Push event from server: " (str ?data))
-  (swap! q1 assoc :quote (:quote (:q1 (nth ?data 1))) :author (:author (:q1 (nth ?data 1))))
-  (swap! q2 assoc :quote (:quote (:q1 (nth ?data 1))) :author (:author (:q2 (nth ?data 1))))))
+  (push-msg-handler ?data))
 
 (defmethod -event-msg-handler :chsk/handshake
   [{:as ev-msg :keys [?data]}]
   (let [[?uid ?csrf-token ?handshake-data] ?data]
     (.log js/console "Handshake: " (str ?data))))
+    
+    
+(defmulti push-msg-handler (fn [[id _]] id))
+
+(defmethod push-msg-handler :quotes/two [[_ event]]
+  (add-quote! event))
+  
 
 ;;;; Sente event router (our `event-msg-handler` loop)
 
@@ -87,16 +94,14 @@
 ;; -------------------------
 ;; Views
 
-(defonce q1 (reagent/atom {:quote "" :author ""}))
-(defonce q2 (reagent/atom {:quote "" :author ""}))
-
 (defn home-page []
-  [:div.row.col-md-8.col-md-offset-2
-   [:h2 "Welcome to myapp"]
+   [:div.row.col-md-8.col-md-offset-2
+   [:h2 "Activity stream"]
+   [:div.row [:a {:href "/about"} "go to about page"]]
    [:br]
-   [:div.row [:blockquote [:p (:quote @q1)] [:footer (:author @q1)]]]
-   [:div.row [:blockquote.blockquote-reverse [:p (:quote @q2)] [:footer (:author @q2)]]]
-   [:div.row [:a {:href "/about"} "go to about page"]]])
+   (for [q (rseq (:quotes @quotes))]
+      ^{:key (rand-int 1000)} [:div.row [:blockquote [:p (:quote q)] [:footer (:author q)]]])
+   ])
 
 (defn about-page []
   [:div [:h2 "About myapp"]
