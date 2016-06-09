@@ -7,7 +7,8 @@
             [cljs.core.async :as async  :refer (<! >! put! chan)]
             [taoensso.encore :as encore :refer ()]
             [taoensso.timbre :as timbre :refer-macros (tracef debugf infof warnf errorf)]
-            [taoensso.sente  :as sente  :refer (cb-success?)])
+            [myapp.chans :refer (chsk ch-chsk chsk-send! chsk-state)]
+            [taoensso.sente  :as sente])
   (:require-macros
     [cljs.core.async.macros :as asyncm :refer (go go-loop)]))
 
@@ -20,23 +21,6 @@
       (swap! quotes update-in [:quotes] drop-last)))
   (swap! quotes update-in [:quotes] conj q))
 
-;;SENTE section
-
-;;-------------------------
-
-;;;; Define our Sente channel socket (chsk) client
-
-(let [packer :edn {:keys [chsk ch-recv send-fn state]}
-      (sente/make-channel-socket-client!
-        "/chsk" ; Must match server Ring routing URL
-        {:type  :auto ;:ws or :ajax :auto will try ws, if it fails, tries ajax
-         :packer packer})]
-  
-  (def chsk       chsk)
-  (def ch-chsk    ch-recv) ; ChannelSocket's receive channel
-  (def chsk-send! send-fn) ; ChannelSocket's send API fn
-  (def chsk-state state)   ; Watchable, read-only atom
-  )
 
 ;;;; Sente event handlers
 (defmulti -event-msg-handler :id)
@@ -80,8 +64,6 @@
   (stop-router!)
   (reset! router_
           (sente/start-client-chsk-router! ch-chsk event-msg-handler)))
-
-;;-------------------------
 
 ;; -------------------------
 ;; Views
