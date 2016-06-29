@@ -4,7 +4,8 @@
             [hiccup.page :refer [include-js include-css html5]]
             [myapp.middleware :refer [wrap-middleware]]
             [environ.core :refer [env]]
-            [myapp.chans :refer (ring-ajax-get-or-ws-handshake ring-ajax-post)]))
+            [myapp.chans :refer (ring-ajax-get-or-ws-handshake ring-ajax-post)]
+            [taoensso.timbre :as timbre :refer (tracef debugf infof warnf errorf)]))
 
 (def mount-target
   [:div#app
@@ -34,12 +35,20 @@
         {:keys [user-id]} params]
     {:status 200 :session (assoc session :uid user-id)}))
 
+(defn broadcast-handler [ring-req]
+  (let [{:keys [session params]} ring-req
+        {:keys [broadcast]} params]
+    (do
+      (debugf "Got broadcast post request: %s" broadcast)
+      {:status 200})))
+
 (defroutes routes
   (GET "/" [] page)
   (GET "/about" [] page)
   (GET  "/chsk"  ring-req (ring-ajax-get-or-ws-handshake ring-req))
   (POST "/chsk"  ring-req (ring-ajax-post                ring-req))
   (POST "/login" ring-req (login-handler                 ring-req))
+  (POST "/broadcast" ring-req (broadcast-handler          ring-req))
   (resources "/")
   (not-found "Not Found"))
 

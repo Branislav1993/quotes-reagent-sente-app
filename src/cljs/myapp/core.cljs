@@ -13,16 +13,21 @@
     [cljs.core.async.macros :as asyncm :refer (go go-loop)]))
 
 (defonce quotes (reagent/atom {:quotes '()}))
+(defonce broadcasting? (atom false))
 
 (defn add-quote! [q]
   (if (< 4 (count (:quotes @quotes)))
     (do 
-      (.log js/console "its five!")
       (swap! quotes update-in [:quotes] drop-last)))
   (swap! quotes update-in [:quotes] conj q))
 
 
 ;;;; Sente event handlers
+(defmulti push-msg-handler (fn [[id _]] id))
+
+(defmethod push-msg-handler :quotes/one [[_ event]]
+  (add-quote! event))
+
 (defmulti -event-msg-handler :id)
 
 (defn event-msg-handler [{:as ev-msg :keys [id ?data event]}]
@@ -47,11 +52,6 @@
   (let [[?uid ?csrf-token ?handshake-data] ?data]
     (.log js/console "Handshake: " (str ?data))))
 
-(defmulti push-msg-handler (fn [[id _]] id))
-
-(defmethod push-msg-handler :quotes/two [[_ event]]
-  (add-quote! event))
-
 ;;;; Sente event router (our `event-msg-handler` loop)
 
 (defonce router_ (atom nil))
@@ -65,17 +65,62 @@
   (reset! router_
           (sente/start-client-chsk-router! ch-chsk event-msg-handler)))
 
+;; login function
+
+(defn login! []
+  (let [user-id (.-value (.getElementById js/document "input-login"))]
+    (if (str/blank? user-id)
+      (js/alert "Please enter a user-id first!")
+      (do
+        (.log js/console "Logging in with user-id %s" user-id)
+        
+        (sente/ajax-lite "/login"
+                         {:method :post
+                          :headers {:X-CSRF-Token (:csrf-token @chsk-state)}
+                          :params  {:user-id (str user-id)}}
+                         
+                         (fn [ajax-resp]
+                           (.log js/console "Ajax login response: %s" ajax-resp)
+                           (let [login-successful? true]
+                             (do
+                               (.log js/console "Login successful")
+                               (sente/chsk-reconnect! chsk)))))
+        (reset! quotes {:quotes '()})
+        ))))
+
+(defn toogle-broadcast! []
+  (swap! broadcasting? not)
+  (sente/ajax-lite "/broadcast"
+                   {:method :post
+                    :headers {:X-CSRF-Token (:csrf-token @chsk-state)}
+                    :params  {:broadcast @broadcasting?}}
+                   (fn [ajax-resp]
+                     (.log js/console "Ajax toogle-broadcast response: %s" (str ajax-resp)))))
+
 ;; -------------------------
 ;; Views
 
 (defn home-page []
-  [:div.row.col-md-8.col-md-offset-2
-   [:h2 "Activity stream"]
-   [:div.row [:a {:href "/about"} "go to about page"]]
-   [:br]
-   (for [q (:quotes @quotes)]
-     ^{:key (rand-int 1000)} [:div.row [:blockquote [:p (:quote q)] [:footer (:author q)]]])
-   ])
+  [:div.row.col-md-12
+   [:div {:class "col-md-12"}
+    [:h2 {:class "col-md-4"} "Activity stream"]
+    [:h3 {:class "col-md-2 pull-right"} [:a {:href "/about"} "About"]]
+    [:br][:br][:br]]
+   
+   [:div#content.row.col-md-12
+    [:p {:class "text-muted"} "The server can use this id to send events to you specifically. (Insert PERA or Mica to try out.)"]
+    [:form {:class "form-group form-inline"}
+     [:p.row
+      [:input#input-login {:type "text" :class "form-control col-md-4" :placeholder "user-id"}]
+      [:span {:class "col-md-1"}]
+      [:button#btn-login {:type "button" :class "form-control btn btn-primary col-md-3" :on-click #(login!)} "Secure login!"]]]
+    [:form {:class "form-group form-inline"}
+     [:p.row
+      [:button#btn-start {:type "button" :class "form-control btn btn-success col-md-3" :on-click #(toogle-broadcast!)} "Toogle"]
+      [:p {:class "text-muted"} (str "Broadcasting: " @broadcasting?)]]]
+    (for [q (:quotes @quotes)]
+      ^{:key (rand-int 1000)} [:div.row [:blockquote [:p (:quote q)] [:footer (:author q)]]])
+    ]])
 
 (defn about-page []
   [:div [:h2 "About myapp"]
